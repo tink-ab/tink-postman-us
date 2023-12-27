@@ -1,0 +1,15 @@
+name: Checkmarx
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+  pull_request:
+    types: [opened, synchronize, reopened]
+jobs:
+  checkmarx-scan:
+    uses: tink-ab/reusable-workflows/.github/workflows/checkmarx-sast-scan.yaml@master
+    with:
+      CMDB_APP_NAME: Tink Accounts Products
+      CMDB_APP_ID: 0078327
+    secrets: inherit
