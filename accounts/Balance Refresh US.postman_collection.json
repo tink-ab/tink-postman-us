@@ -1,0 +1,782 @@
+{
+	"info": {
+		"_postman_id": "fc3a43ff-e82d-4747-a3f1-c5b229d16335",
+		"name": "Balance Refresh US",
+		"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit the [Account Check Integration Guide](https://docs.tink.com/resources/account-check/account-check-integration-guide).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, click on collection name, which should have three dots next to it. Click on Edit Collection, in the pop up there is a variable tab. This tab contains different variables.\n\nTo begin, enter your variables in the **CURRENT VALUE** column:\n\n1. Enter the `client_id` and `client_secret` values from your Console app.\n2. Enter the `id_hint` value to be displayed in the Tink URL. The `id_hint` value is presented to the end user in Tink Link. This is to be able to verify the identity of the actual user they are interacting with and to prevent URL spoofing attacks.\n3. Enter [locale](https://docs.tink.com/resources/account-check/account-check-sdk-reference#locales) and [market](https://docs.tink.com/resources/account-check/account-check-sdk-reference#markets). The default values are `en_US` for locale and `SE` for market. These values will later be used to create a user and to generate a Tink URL.\n4. Enter the `external_user_id` value that will be assigned to your user upon creation.\n5. To change the default redirect page value, change the `redirect_url` value.\n6. `state` is optional and is returned to you when the end user returns to your redirect_uri. Use this parameter to track the end user after they’ve left your app and entered the Tink flow.\n\nMake sure that you enter your `client_id` and `client_secret` in the **INITIAL VALUE** column and the **CURRENT VALUE**.\n\nBefore you can fetch data, you must create and authenticate the user.\n\nTo create and authenticate the user, select the **Generate the Reports** folder and:\n\n1. Select and send the **Generate Authorization Code** request. A code is generated. This code is used to generate your Tink URL.\n2. When the process has completed, select **Visualize** in the **Body** part of Postman. You’ll see a **Tink URL**, ready to use. Select the entire URL and copy it to your clipboard.\n3. Paste the link in your browser and complete the flow by authenticating your user.\n4. Copy `account_verification_report_id` parameter from browser url and update `report_id` variable.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nAfter you have authenticated your user, now get account check report:\n1. Select and send the **Get Token to Retrive Account Verification Report** request to generate the access token.\n2. Select and send the **Get the Account Check report as JSON** request to retrieve created account check report.\n\nTo get updated balance data select **Refresh and Fetch Balance Data** folder and:\n\n1. Select and send the **Authorize your app** request. This generates your client `access_token`.\n2. Select and send **Generate refresh authorization code** request. This create generate the code for user token.\n3. Select and send the **Generate Client token** request to generate your client `access_token`.\n4. Select and send the **Call the Balance Refresh API** request. This will give `balanceRefreshId` which can be use to fetch the status of polling API.\n4.1 Select and send the **Call the Balance Refresh API** request. This call will retry until the polling api status gets \"finished\" then you can go on next call.\n5. Select and send the **Fetch the refreshed Balance** request. This will fetch the balance of the account,call the API with the specific accountId.\n\nNote: when you first download this postman collection, in Setting Up Continuous Access > Step 2. Create User, you need to ensure that the \"Body\" is set to \"JSON\". So within this POST command, navigate to the \"Body\" tab and ensure you see \"JSON\" and not \"Text\" for the type. Typically, postman will pre-set this as Text.\nIf you want to use external user then, go to \"Body\" and add external user id there.\n\nWhen you've entered all your variables except for `access_token`, run the **POST** commands to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of collection variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Setting up Continuous Access",
+			"item": [
+				{
+					"name": "1. Authorize app",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "user:create,authorization:grant",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/token",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"user_id\", jsonData.user_id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"external_user_id\": null,\n  \"market\": \"US\", \n  \"locale\": \"en_US\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/user/create",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"create"
+							]
+						},
+						"description": "Create User API endpoint call with a way to identify the user and the market."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Generate the Reports",
+			"item": [
+				{
+					"name": "2. Get Token to Retrieve Account Verification Report",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "account-verification-reports:read,accounts:read,balance-refresh,balance-refresh:readonly,accounts.balances:readonly",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/token",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get the Account Check report as JSON",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/account-verification-reports/{{report_id}}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"account-verification-reports",
+								"{{report_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1. Generate Authorization Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let jsonResponse = JSON.parse(responseBody);",
+									"",
+									"let clientId = pm.collectionVariables.get(\"client_id\");",
+									"let tinkLinkmarket = pm.collectionVariables.get(\"market\")",
+									"let tinkLinklocale = pm.collectionVariables.get(\"locale\")",
+									"let redirectUri = pm.collectionVariables.get(\"redirect_url\");",
+									"",
+									"//Set code in variables",
+									"let code = jsonResponse[\"code\"];",
+									"pm.collectionVariables.set(\"code\", code);",
+									"",
+									"//Encode redirect URI",
+									"let redirectUriEncoded = encodeURIComponent(redirectUri);",
+									"",
+									"//Compose TinkLink URI",
+									"let tinkLink = \"https://link.us.tink.com/1.0/account-check/connect?client_id=YOUR_CLIENT_ID&state=OPTIONAL&redirect_uri=REDIRECT_URL&authorization_code=USER_AUTHORIZATION_CODE&market=MARKET\"",
+									"tinkLink = tinkLink.replace(\"YOUR_CLIENT_ID\", clientId);",
+									"tinkLink = tinkLink.replace(\"USER_AUTHORIZATION_CODE\", code);",
+									"tinkLink = tinkLink.replace(\"REDIRECT_URL\", redirectUriEncoded);",
+									"tinkLink = tinkLink.replace(\"MARKET\", tinkLinkmarket);",
+									"tinkLink = tinkLink.replace(\"LOCALE\", tinkLinklocale);",
+									"",
+									"pm.collectionVariables.set(\"tink_link\", tinkLink);",
+									"",
+									"//Set html template for Postman Visualize",
+									"let postmanVisualise = `",
+									"<html>",
+									"<head>",
+									"    <script src=\"https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js\"></script>",
+									"    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js\"></script>",
+									"</head>",
+									"<body>",
+									"    <div>",
+									"    <div>",
+									"        <pre><code style=\"width:max-content;\" id=\"tinkLink\">${tinkLink}</code></pre>",
+									"    </div>",
+									"    <button class=\"copyButton\" type=\"button\" data-clipboard-action=\"copy\" data-clipboard-target=\"#tinkLink\" style=\"background:#062A2E;color:white;border-radius:25px\">COPY TINKLINK TO YOUR CLIPBOARD</button>",
+									"    </div>",
+									"</body>",
+									"</html>",
+									"<script>",
+									"    var clipboard = new ClipboardJS('.copyButton');",
+									"",
+									"    clipboard.on('success', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'TINKLINK COPIED TO YOUR CLIPBOARD';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"",
+									"    clipboard.on('error', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'ISSUE WITH COPYING TINKLINK';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"</script>`",
+									"",
+									"//Set the html template to Postamen Visualizer",
+									"pm.visualizer.set(postmanVisualise, pm.response.json());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "actor_client_id",
+									"value": "df05e4b379934cd09963197cc855bfe9",
+									"description": "This value never changes and is used by Tink to identify apps. Once you declare the value, you allow Tink to act on your behalf.",
+									"type": "text"
+								},
+								{
+									"key": "user_id",
+									"value": "{{user_id}}",
+									"description": "You can use the user_id or the external_user_id ",
+									"type": "text"
+								},
+								{
+									"key": "id_hint",
+									"value": "End user name/username",
+									"description": "The id_hint is a value that will be presented to the end-user in Tink Link, to be able to verify the identity of the actual user they are interacting with and prevent URL spoofing attacks. It can be any arbitrary string value that is recognizable to the end-user, such as the user’s full name or email.",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read,accounts:read,accounts.balances:readonly",
+									"type": "text"
+								},
+								{
+									"key": "external_user_id",
+									"value": "{{external_user_id}}",
+									"description": "You can use the user_id or the external_user_id ",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/authorization-grant/delegate",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"authorization-grant",
+								"delegate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Refresh and Fetch Balance Data",
+			"item": [
+				{
+					"name": "2. Generate refresh authorization code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"code\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{user_id}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "accounts:read,accounts.balances:readonly,credentials:read,credentials:refresh,balance-refresh",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/authorization-grant",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Generate Client token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/token",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Fetch the refreshed balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "https://api.us.tink.com/data/v2/accounts/{id}/balances",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"data",
+								"v2",
+								"accounts",
+								"{id}",
+								"balances"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Call the Balance Refresh API",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"accountId\":\"accountId\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/balance-refreshes",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"balance-refreshes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1. Authorize your app",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/oauth/token",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "4.1. Call the Balance Refresh API",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"",
+									"if (jsonData.status !== \"finished\") {",
+									"    setTimeout(() => {}, 1000);",
+									"    pm.setNextRequest(pm.info.setNextRequest);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{access_token}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "https://api.us.tink.com/api/v1/balance-refreshes/{id}",
+							"protocol": "https",
+							"host": [
+								"api",
+								"us",
+								"tink",
+								"com"
+							],
+							"path": [
+								"api",
+								"v1",
+								"balance-refreshes",
+								"{id}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test(\"Status code is 200\", function () {",
+					"  pm.response.to.have.status(200);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "state_id",
+			"value": "{{state_id}}"
+		},
+		{
+			"key": "external_user_id",
+			"value": "external_user_id"
+		},
+		{
+			"key": "client_id",
+			"value": "{{client_id}}"
+		},
+		{
+			"key": "client_secret",
+			"value": "{{client_secret}}"
+		},
+		{
+			"key": "report_id",
+			"value": "{{report_id}}"
+		},
+		{
+			"key": "access_token",
+			"value": "{{access_token}}"
+		},
+		{
+			"key": "user_id",
+			"value": "{{user_id}}"
+		},
+		{
+			"key": "locale",
+			"value": "en_US"
+		},
+		{
+			"key": "market",
+			"value": "US"
+		},
+		{
+			"key": "code",
+			"value": "{{code}}"
+		},
+		{
+			"key": "tink_link",
+			"value": "https://link.us.tink.com/1.0/account-check/connect?client_id=ae89c638d52444bfbea050a6cd773d29&state=OPTIONAL&redirect_uri=https%3A%2F%2Fconsole.us.tink.com%2Fcallback&authorization_code=46e53498b80348a2b8feb02dd703a9ff&market=US"
+		},
+		{
+			"key": "id_hint",
+			"value": "{{id_hint}}"
+		},
+		{
+			"key": "redirect_url",
+			"value": "https://console.us.tink.com/callback"
+		}
+	]
+}
