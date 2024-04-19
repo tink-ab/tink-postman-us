@@ -690,11 +690,11 @@
 		},
 		{
 			"key": "client_id",
-			"value": "040bf30d13bf41499d1b92bc533712d2"
+			"value": "{{client_id}}"
 		},
 		{
 			"key": "client_secret",
-			"value": "1f9b258af2ec40159eda8c9bda750e27"
+			"value": "{{client_secret}}"
 		},
 		{
 			"key": "report_id",
@@ -702,11 +702,11 @@
 		},
 		{
 			"key": "access_token",
-			"value": "eyJhbGciOiJFUzI1NiIsImtpZCI6ImRiODdiNzViLTY2NTUtNGYzYy04MTliLTNkMjU0NTliMjVmZiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE3MDY1NDMyOTcsImlhdCI6MTcwNjUzNjA5NywiaXNzIjoidGluazovL2F1dGgiLCJqdGkiOiJjMGIxYzQyYi0yYjZlLTQ0YWMtYWZmMy0zMDE5ZWNjN2RjY2EiLCJvcmlnaW4iOiJtYWluIiwic2NvcGVzIjpbImNyZWRlbnRpYWxzOnJlZnJlc2giLCJhY2NvdW50cy5iYWxhbmNlczpyZWFkb25seSIsImFjY291bnRzOnJlYWQiLCJiYWxhbmNlLXJlZnJlc2giLCJjcmVkZW50aWFsczpyZWFkIl0sInN1YiI6InRpbms6Ly9hdXRoL3VzZXIvMWY3ZDhkN2NjMDM4NDBmMjg1MTVjNzFiNzkzNTNkMjEiLCJ0aW5rOi8vYXBwL2lkIjoiYWY4MWMzMzAwZmYzNDAxNGIyMmNhNjhlZDMyZGMzMDIiLCJ0aW5rOi8vYXBwL3ZlcmlmaWVkIjoidHJ1ZSIsInRpbms6Ly9jbGllbnQvaWQiOiJhZTg5YzYzOGQ1MjQ0NGJmYmVhMDUwYTZjZDc3M2QyOSJ9.ruytDwqX6saMERfJbwAuT02KEcYJDjIXKu4DcEQ7AlEhB1xD5zp8Ll9CXVYdRYy3NZixWf-Bt2acrS0yE_zBDw"
+			"value": "{{access_token}}"
 		},
 		{
 			"key": "user_id",
-			"value": "1f7d8d7cc03840f28515c71b79353d21"
+			"value": "{{user_id}}"
 		},
 		{
 			"key": "locale",
@@ -718,11 +718,11 @@
 		},
 		{
 			"key": "code",
-			"value": "da1969ad2f364205a870faa62136b92e"
+			"value": "{{code}}"
 		},
 		{
 			"key": "tink_link",
-			"value": "https://link.tink.com/1.0/account-check/connect?client_id=ae89c638d52444bfbea050a6cd773d29&state=OPTIONAL&redirect_uri=https%3A%2F%2Fconsole.us.tink.com%2Fcallback&authorization_code=415ae98740df403b9d202984006f8eba&market=US"
+			"value": "https://link.tink.com/1.0/account-check/connect?client_id={{client_id}}&state=OPTIONAL&redirect_uri=REDIRECT_URL&authorization_code=USER_AUTHORIZATION_CODE&market=US"
 		},
 		{
 			"key": "id_hint",
