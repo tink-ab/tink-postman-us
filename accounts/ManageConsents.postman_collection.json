@@ -1,0 +1,1174 @@
+{
+	"info": {
+		"_postman_id": "087b9cdf-0fb6-43f0-b73a-32dc76a90839",
+		"name": "ManageConsents",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "19421806"
+	},
+	"item": [
+		{
+			"name": "Update Consents",
+			"item": [
+				{
+					"name": "1. Generate Client Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								},
+								{
+									"key": "",
+									"value": "authorization:grant,user:read,user:create, credentials:read,link-session:read",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Generate Authorization Code + Tink Link URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"code\", jsonData.code);",
+									"",
+									"let clientId = pm.environment.get(\"client_id\");",
+									"//let redirectUri = pm.environment.get('http://localhost:3000/callback');",
+									"let tinkLinkURL = pm.environment.get(\"tink_link_url\");",
+									"let cred_id = pm.environment.get(\"cred_id\");",
+									"let code = pm.environment.get(\"code\");",
+									"let market = pm.environment.get(\"market\");",
+									"let redirectUri = pm.environment.get(\"redirect_uri\");",
+									"let state = pm.environment.get(\"userId\");",
+									"//Encode redirect URI",
+									"let redirectUriEncoded = encodeURIComponent(redirectUri);",
+									"",
+									"//Compose TinkLink URI",
+									"let tinkLink = \"tink_link_url/1.0/account-check/update-consent?client_id=YOUR_CLIENT_ID&redirect_uri=REDIRECT_URL&authorization_code=USER_AUTHORIZATION_CODE&credentials_id=CRED_ID&market=MARKET\"",
+									"tinkLink = tinkLink.replace(\"YOUR_CLIENT_ID\", clientId);",
+									"tinkLink = tinkLink.replace(\"USER_AUTHORIZATION_CODE\", code);",
+									"tinkLink = tinkLink.replace(\"REDIRECT_URL\", redirectUriEncoded);",
+									"tinkLink = tinkLink.replace(\"CRED_ID\", cred_id);",
+									"tinkLink = tinkLink.replace(\"MARKET\", market);",
+									"tinkLink = tinkLink.replace(\"tink_link_url\",tinkLinkURL);",
+									"//tinkLink = tinkLink.replace(\"STATE\",state);",
+									"pm.environment.set(\"tink_link\", tinkLink);",
+									"",
+									"//Set html template for Postman Visualize",
+									"let postmanVisualise = `",
+									"<html>",
+									"<head>",
+									"    <script src=\"https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js\"></script>",
+									"    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js\"></script>",
+									"</head>",
+									"<body>",
+									"    <div>",
+									"    <div>",
+									"        <pre><code style=\"width:max-content;\" id=\"tinkLink\">${tinkLink}</code></pre>",
+									"    </div>",
+									"    <button class=\"copyButton\" type=\"button\" data-clipboard-action=\"copy\" data-clipboard-target=\"#tinkLink\" style=\"background:#062A2E;color:white;border-radius:25px\">COPY TINKLINK TO YOUR CLIPBOARD</button>",
+									"    </div>",
+									"</body>",
+									"</html>",
+									"<script>",
+									"    var clipboard = new ClipboardJS('.copyButton');",
+									"",
+									"    clipboard.on('success', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'TINKLINK COPIED TO YOUR CLIPBOARD';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"",
+									"    clipboard.on('error', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'ISSUE WITH COPYING TINKLINK';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"</script>`",
+									"",
+									"//Set the html template to Postamen Visualizer",
+									"pm.visualizer.set(postmanVisualise);",
+									"",
+									"",
+									"",
+									"",
+									"",
+									"",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{userId}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "providers:read,user:read,authorization:read,provider-consents:read,provider-consents:write,link-session:read,credentials:read,credentials:refresh,credentials:write,account-verification-reports:write",
+									"type": "text"
+								},
+								{
+									"key": "actor_client_id",
+									"value": "df05e4b379934cd09963197cc855bfe9",
+									"type": "text"
+								},
+								{
+									"key": "id_hint",
+									"value": "null",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/authorization-grant/delegate",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"authorization-grant",
+								"delegate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete Consents",
+			"item": [
+				{
+					"name": "1. Generate a Client Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Generate Authorization Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"code\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{userId}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "credentials:write",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Generate a User Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Delete Consent",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "default"
+							}
+						],
+						"url": {
+							"raw": "{{base}}api/v1/credentials/{{cred_id}}",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"credentials",
+								"{{cred_id}}"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Delete Users",
+			"item": [
+				{
+					"name": "1. Generate a Client Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Generate Authorization Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"code\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{userId}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "user:delete",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Generate a User Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Delete User",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "default"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base}}api/v1/user/delete",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"user",
+								"delete"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fetch Credentials",
+			"item": [
+				{
+					"name": "1. Generate Client Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								},
+								{
+									"key": "",
+									"value": "authorization:grant,user:read,user:create, credentials:read,link-session:read",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Generate Authorization Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"code\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{userId}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "credentials:read",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "accounts.balances:readonly,accounts:read,credentials:read,balance-refresh,balance-refresh:readonly,credentials:refresh,credentials:write,user:read",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Generate User Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Call Credentials List",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"cred_id\", jsonData.credentials[0].id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "default"
+							},
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							},
+							{
+								"key": "report_id",
+								"value": "{{reportId}}",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"url": {
+							"raw": "{{base}}api/v1/credentials/list",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"credentials",
+								"list"
+							],
+							"query": [
+								{
+									"key": "",
+									"value": "",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Fetch Provider Consents",
+			"item": [
+				{
+					"name": "1. Generate Client Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:grant",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				},
+				{
+					"name": "2. Generate Authorization Code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"code\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{userId}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "provider-consents:read",
+									"type": "text"
+								},
+								{
+									"key": "",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Generate User Token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								},
+								{
+									"key": "code",
+									"value": "{{code}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. List Provider Consents",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base}}api/v1/provider-consents",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"provider-consents"
+							]
+						},
+						"description": "Welcome to Tink’s Postman collection for Account Check.\n\nFor detailed information on how to use Account Check, visit [Fetch your first Account Check report](https://docs.tink.com/resources/account-check/verify-your-first-account).\n\nThe documentation in this Postman collection shows how you get your Tink variables and enter them in Postman to be able to use this collection.\n\nMake sure that you have created your Tink Console account. This is where you find your API credentials, for example `client_id` and `client_secret`, and create and manage your apps. If you haven't created a Console account and an app, go to [Set up your Tink Console account](https://docs.tink.com/resources/landing/set-up-your-tink-account) and follow the instructions to set up an account and create your first app.\n\nIn Postman, go to the **Variables** tab, which should be the one with a green dot next to it. This tab contains four variables. The rest of this documentation shows how to retrieve these values.\n\nMake sure that you enter all of your variables in the **CURRENT VALUE** column.\n\nEnter the `client_id` and `client_secret` values from your Console app.\n\nTo get the `report_id` value, you must build a Tink Link URL. To do this, open Console and go to **Account Check** > **Tink Link**, and create your own Tink Link. These steps are required for providing consent to a financial institution, so that Tink can connect and retrieve account data. At the bottom of the page, select **Preview** and follow all steps on the Tink Link page that opens in a new window. At the end of a successful authorization flow, the **Account Check successful** page displays your `account_verification_report_id`. Copy this code, go to Postman, and paste it into the variables field for `report_id`.\n\nMake sure that all of your variables are entered into the **CURRENT VALUE** column. Select **Save** (or Ctrl+S).\n\nWhen you've entered all your variables except for `access_token`, run the **POST** command to exchange your `code` for an `access_token`. The value for `access_token` is automatically entered into your list of variables.\n\nConfirm that your `access_token` has been added to your list of variables. Use your `access_token` any number of times to run the **GET** commands to fetch a report."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"pm.test(\"Status code is 200\", function () {",
+					"  pm.response.to.have.status(200);",
+					"});"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "client_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "client_secret",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "report_id",
+			"value": "",
+			"type": "string",
+			"disabled": true
+		},
+		{
+			"key": "access_token",
+			"value": "",
+			"type": "string",
+			"disabled": true
+		}
+	]
+}
