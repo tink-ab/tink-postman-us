@@ -1,0 +1,1386 @@
+{
+	"info": {
+		"_postman_id": "c2504f36-86eb-4b6a-abc4-c90e33e03683",
+		"name": "Transactions US",
+		"description": "To run this collection properly no environment is allowed to be set, to avoid corruption of variables.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "34771486"
+	},
+	"item": [
+		{
+			"name": "1. Create a user in two steps",
+			"item": [
+				{
+					"name": "1.1 Authorize app",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"client_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/token",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"disabled": true
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"disabled": true
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"disabled": true
+								},
+								{
+									"key": "scope",
+									"value": "user:create, authorization:grant",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "1.2 Create user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"user_id\", jsonData.user_id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n      \"market\": \"US\", \n      \"locale\": \"en_US\"\n    }"
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/user/create",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"create"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "2. Generate a user authorization code and grant user access",
+			"item": [
+				{
+					"name": "2.1 Generate authorization code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"authorization_code\", jsonData.code);",
+									"",
+									"let clientId = pm.collectionVariables.get(\"client_id\");",
+									"let tinkLinkmarket = pm.collectionVariables.get(\"market\")",
+									"let tinkLinklocale = pm.collectionVariables.get(\"locale\")",
+									"let redirectUri = pm.collectionVariables.get(\"redirect_uri\");",
+									"let tinkLinkURL = pm.collectionVariables.get(\"tink_link_url\");",
+									"",
+									"//Set code in variables",
+									"let code = jsonData[\"code\"];",
+									"pm.collectionVariables.set(\"code\", code);",
+									"",
+									"//Encode redirect URI",
+									"let redirectUriEncoded = encodeURIComponent(redirectUri);",
+									"",
+									"//Compose TinkLink URI",
+									"let tinkLink = \"tink_link_url/1.0/transactions/connect-accounts/?client_id=YOUR_CLIENT_ID&redirect_uri=REDIRECT_URL&authorization_code=USER_AUTHORIZATION_CODE&market=MARKET&locale=LOCALE\"",
+									"tinkLink = tinkLink.replace(\"YOUR_CLIENT_ID\", clientId);",
+									"tinkLink = tinkLink.replace(\"USER_AUTHORIZATION_CODE\", code);",
+									"tinkLink = tinkLink.replace(\"REDIRECT_URL\", redirectUriEncoded);",
+									"tinkLink = tinkLink.replace(\"MARKET\", tinkLinkmarket);",
+									"tinkLink = tinkLink.replace(\"LOCALE\", tinkLinklocale);",
+									"tinkLink = tinkLink.replace(\"tink_link_url\",tinkLinkURL);",
+									"",
+									"pm.collectionVariables.set(\"tink_link\", tinkLink);",
+									"",
+									"//Set html template for Postman Visualize",
+									"let postmanVisualise = `",
+									"<html>",
+									"<head>",
+									"    <script src=\"https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js\"></script>",
+									"    <script src=\"https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js\"></script>",
+									"</head>",
+									"<body>",
+									"    <div>",
+									"    <div>",
+									"        <pre><code style=\"width:max-content;\" id=\"tinkLink\">${tinkLink}</code></pre>",
+									"    </div>",
+									"    <button class=\"copyButton\" type=\"button\" data-clipboard-action=\"copy\" data-clipboard-target=\"#tinkLink\" style=\"background:#062A2E;color:white;border-radius:25px\">COPY TINKLINK TO YOUR CLIPBOARD</button>",
+									"    </div>",
+									"</body>",
+									"</html>",
+									"<script>",
+									"    var clipboard = new ClipboardJS('.copyButton');",
+									"",
+									"    clipboard.on('success', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'TINKLINK COPIED TO YOUR CLIPBOARD';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"",
+									"    clipboard.on('error', function(tl) {",
+									"        tl.clearSelection()",
+									"        tl.trigger.textContent = 'ISSUE WITH COPYING TINKLINK';",
+									"        window.setTimeout(function() {",
+									"            tl.trigger.textContent = 'COPY TINKLINK TO YOUR CLIPBOARD';",
+									"        }, 2500);",
+									"    });",
+									"</script>`",
+									"",
+									"//Set the html template to Postamen Visualizer",
+									"pm.visualizer.set(postmanVisualise, pm.response.json());"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "actor_client_id",
+									"value": "{{actor_client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "user_id",
+									"value": "{{user_id}}",
+									"description": "OPTIONAL",
+									"type": "text"
+								},
+								{
+									"key": "id_hint",
+									"value": "Test user",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "authorization:read,authorization:grant,credentials:refresh,credentials:read,credentials:write,providers:read,user:read",
+									"type": "text"
+								},
+								{
+									"key": "external_user_id",
+									"value": "",
+									"description": "OPTIONAL",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/authorization-grant/delegate",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"authorization-grant",
+								"delegate"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Once You have completed the Login flow copy paste the creadentialId into the variables of the collection"
+		},
+		{
+			"name": "3. Fetch user data",
+			"item": [
+				{
+					"name": "3.1 Create a client access token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"client_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/token",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							],
+							"query": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"disabled": true
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"disabled": true
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"disabled": true
+								},
+								{
+									"key": "scope",
+									"value": "user:create, authorization:grant",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.2 Create an authorization grant code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"authorization_code_user_access\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{user_id}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "accounts:read,balances:read,transactions:read,provider-consents:read,enrichment.transactions",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.3 Create a user access token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"user_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "code",
+									"value": "{{authorization_code_user_access}}",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/token",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.4 List Accounts and Balances",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base}}/data/v2/accounts",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"data",
+								"v2",
+								"accounts"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.5.1 List Enriched Transactions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/transactions",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.5.2 Fetch a list of all categories for your locale",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/categories",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3.6 List Transactions",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": ""
+						},
+						"url": {
+							"raw": "{{base}}/data/v2/transactions",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"data",
+								"v2",
+								"transactions"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "4. Fetch additional enriched user data",
+			"item": [
+				{
+					"name": "4.1 List Recurring Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"var token = responseJson.nextPageToken;",
+									"pm.collectionVariables.set(\"rtx_next_page_token\", token)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/recurring-transactions",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"recurring-transactions"
+							],
+							"query": [
+								{
+									"key": "pageToken",
+									"value": "{{nextPageToken}}",
+									"disabled": true
+								},
+								{
+									"key": "pageSize",
+									"value": "100",
+									"disabled": true
+								},
+								{
+									"key": "groupIdIn",
+									"value": "GROUP_ID_1",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.2 List Predicted Recurring Transactions",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"var token = responseJson.nextPageToken;",
+									"pm.collectionVariables.set(\"nextPageToken\", token)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/predicted-recurring-transactions",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"predicted-recurring-transactions"
+							],
+							"query": [
+								{
+									"key": "pageToken",
+									"value": "{{nextPageToken}}",
+									"disabled": true
+								},
+								{
+									"key": "pageSize",
+									"value": "100",
+									"disabled": true
+								},
+								{
+									"key": "accountIdIn",
+									"value": "ACCOUNT_ID_1",
+									"disabled": true
+								},
+								{
+									"key": "groupIdIn",
+									"value": "GROUP_ID_1",
+									"disabled": true
+								},
+								{
+									"key": "predictionSpanDays",
+									"value": "70",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.3 List Recurring Transaction Groups",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"var token = responseJson.nextPageToken;",
+									"pm.collectionVariables.set(\"nextPageToken\", token)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": []
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/recurring-transactions-groups",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"recurring-transactions-groups"
+							],
+							"query": [
+								{
+									"key": "pageToken",
+									"value": "{{nextPageToken}}",
+									"disabled": true
+								},
+								{
+									"key": "pageSize",
+									"value": "100",
+									"disabled": true
+								},
+								{
+									"key": "statusIn",
+									"value": "BOOKED",
+									"disabled": true
+								},
+								{
+									"key": "accountIdIn",
+									"value": "ACCOUNT_ID_1",
+									"disabled": true
+								},
+								{
+									"key": "accountIdIn",
+									"value": "ACCOUNT_ID_2",
+									"disabled": true
+								},
+								{
+									"key": "categoryIdIn",
+									"value": "CATEGORY_ID_1",
+									"disabled": true
+								},
+								{
+									"key": "categoryIdIn",
+									"value": "CATEGORY_ID_2",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4.3.1 Get Recurring Transaction Group with Specified Identifier",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const responseJson = pm.response.json();",
+									"var token = responseJson.nextPageToken;",
+									"pm.environment.set(\"nextPageToken\", token)"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "",
+								"value": "",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base}}/enrichment/v1/recurring-transactions-groups/GROUP_ID",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"enrichment",
+								"v1",
+								"recurring-transactions-groups",
+								"GROUP_ID"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "5. Refresh data",
+			"item": [
+				{
+					"name": "5.1 List User's Provider Consents",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base}}/api/v1/provider-consents",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"provider-consents"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.2 Create an authorization code",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"authorization_code_user_access\", jsonData.code);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "external_user_id",
+								"value": "test_user_06",
+								"description": "OPTIONAL",
+								"type": "text",
+								"disabled": true
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "user_id",
+									"value": "{{user_id}}",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "credentials:refresh, provider-consents:read",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/authorization-grant",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"authorization-grant"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.3 Create a user access token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"user_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "code",
+									"value": "{{authorization_code_user_access}}",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "authorization_code",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/token",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5.4 Refresh credentials",
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{user_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/credentials/{{credentials_id}}/refresh",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"credentials",
+								"{{credentials_id}}",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "6. Configure webhooks",
+			"item": [
+				{
+					"name": "6.1 Create a client access token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"client_access_token\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "scope",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}/api/v1/oauth/token",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6.2 Subscribe to webhooks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.collectionVariables.set(\"secret\", jsonData.secret);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{client_access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"description of your webhook(s)\",\n  \"disabled\": false,\n  \"enabledEvents\": [\n    \"refresh:finished\"\n  ],\n  \"url\": \"https://endpoint.example.com/webhook\"\n}"
+						},
+						"url": {
+							"raw": "{{base}}/events/v2/webhook-endpoints",
+							"host": [
+								"{{base}}"
+							],
+							"path": [
+								"events",
+								"v2",
+								"webhook-endpoints"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "client_id",
+			"value": "YOUR CLIENT ID HERE",
+			"type": "string"
+		},
+		{
+			"key": "client_secret",
+			"value": "YOUR CLIENT SECRET HERE",
+			"type": "string"
+		},
+		{
+			"key": "actor_client_id",
+			"value": "df05e4b379934cd09963197cc855bfe9",
+			"type": "string"
+		},
+		{
+			"key": "base",
+			"value": "https://api.production.houston.tink.com",
+			"type": "string"
+		},
+		{
+			"key": "client_access_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": ""
+		},
+		{
+			"key": "authorization_code",
+			"value": ""
+		},
+		{
+			"key": "code",
+			"value": ""
+		},
+		{
+			"key": "tink_link",
+			"value": ""
+		},
+		{
+			"key": "authorization_code_user_access",
+			"value": ""
+		},
+		{
+			"key": "user_access_token",
+			"value": ""
+		},
+		{
+			"key": "nextPageToken",
+			"value": ""
+		},
+		{
+			"key": "tink_link_url",
+			"value": "https://link.us.tink.com",
+			"type": "string"
+		},
+		{
+			"key": "locale",
+			"value": "en_US",
+			"type": "string"
+		},
+		{
+			"key": "market",
+			"value": "US",
+			"type": "string"
+		},
+		{
+			"key": "redirect_uri",
+			"value": "https://console.us.tink.com/callback",
+			"type": "string"
+		},
+		{
+			"key": "credentials_id",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "rtx_nextPageToken",
+			"value": ""
+		},
+		{
+			"key": "rtx_next_page_token",
+			"value": ""
+		},
+		{
+			"key": "secret",
+			"value": ""
+		}
+	]
+}
