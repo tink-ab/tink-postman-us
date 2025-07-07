@@ -7,6 +7,143 @@
 	},
 	"item": [
 		{
+			"name": "Webhook Setup",
+			"item": [
+				{
+					"name": "0.1 Authorize app",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"accessToken\", jsonData.access_token);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"description": "Client Id is the unique ID for your app",
+									"type": "default"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"description": "Client Secret is the unique secret for you client",
+									"type": "default"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "default"
+								},
+								{
+									"key": "scope",
+									"value": "webhook-endpoints",
+									"type": "default"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base}}api/v1/oauth/token",
+							"host": [
+								"{{base}}api"
+							],
+							"path": [
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "0.2 Create webhook endpoint",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"pm.environment.set(\"userId\", jsonData.user_id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"type": "text",
+								"value": "Bearer {{accessToken}}"
+							},
+							{
+								"key": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"description\": \"My balance check webhook\",\n    \"disabled\": false,\n    \"enabledEvents\": [\n        \"balance-refresh:finished\"\n    ],\n    \"url\": \"{{webhook_url}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base}}events/v2/webhook-endpoints",
+							"host": [
+								"{{base}}events"
+							],
+							"path": [
+								"v2",
+								"webhook-endpoints"
+							]
+						},
+						"description": "Create User API endpoint call with a way to identify the user and the market."
+					},
+					"response": []
+				}
+			],
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
+			]
+		},
+		{
 			"name": "Setting up Continuous Access",
 			"item": [
 				{
@@ -63,8 +200,7 @@
 								"oauth",
 								"token"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
@@ -358,6 +494,32 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "2.4 Fetch account balance",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{accessToken}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base}}data/v2/accounts/{{accountId}}/balances",
+							"host": [
+								"{{base}}data"
+							],
+							"path": [
+								"v2",
+								"accounts",
+								"{{accountId}}",
+								"balances"
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		},
@@ -365,7 +527,7 @@
 			"name": "Refresh and Fetch Balance Data",
 			"item": [
 				{
-					"name": "3.1 Authorize your app",
+					"name": "3.0 Authorize your app",
 					"event": [
 						{
 							"listen": "test",
@@ -418,13 +580,12 @@
 								"oauth",
 								"token"
 							]
-						},
-						"description": ""
+						}
 					},
 					"response": []
 				},
 				{
-					"name": "3.2 Generate refresh authorization code",
+					"name": "3.1 Generate refresh authorization code",
 					"event": [
 						{
 							"listen": "test",
@@ -476,7 +637,7 @@
 					"response": []
 				},
 				{
-					"name": "3.3 Generate User token",
+					"name": "3.2 Generate user token",
 					"event": [
 						{
 							"listen": "test",
@@ -538,7 +699,7 @@
 					"response": []
 				},
 				{
-					"name": "3.4 Create Balance Refresh Token",
+					"name": "3.3 Create balance refresh",
 					"event": [
 						{
 							"listen": "test",
@@ -588,7 +749,7 @@
 					"response": []
 				},
 				{
-					"name": "3.5 Call the Balance Refresh API",
+					"name": "3.4 Retrieve balance refresh status",
 					"event": [
 						{
 							"listen": "test",
@@ -627,14 +788,14 @@
 					"response": []
 				},
 				{
-					"name": "3.6 Fetch the refreshed balance",
+					"name": "3.5 Fetch the refreshed balance",
 					"request": {
 						"method": "GET",
 						"header": [
 							{
 								"key": "Authorization",
-								"value": "Bearer {{accessToken}}",
-								"type": "text"
+								"type": "text",
+								"value": "Bearer {{accessToken}}"
 							}
 						],
 						"url": {
@@ -731,6 +892,10 @@
 		{
 			"key": "redirect_url",
 			"value": "https://console.tink.com/callback"
+		},
+		{
+			"key": "webhook_url",
+			"value": "https://endpoint.example.com/webhook"
 		}
 	]
 }
