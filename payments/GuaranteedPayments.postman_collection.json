@@ -1,0 +1,812 @@
+{
+	"info": {
+		"_postman_id": "3e1a8d88-ae60-4971-861b-d40b98d1181f",
+		"name": "Guaranteed Payments",
+		"description": "# US Guaranteed Payments - Mandate Flow\n\n[API Reference](https://docs.us.tink.com/resources/payments-us/api-reference)\n\n## Instructions\n\nDownload and Import the Postman Collection and Environment. Supply the necessary fields marked with `CHANGE_ME.`\n\n## How to get the ClientId and ClientSecret:\n\nTo run API calls, update the environment with the matching `client_secret`.\n\n1. Log in to the Visa [Console](https://console.us.tink.com/)\n    \n2. Go to App settings\n    \n3. Copy the Client ID and place it in the postman environment `client_id` field.\n    \n4. In Console, Creat a new client secret, copy it and place it in the postman environment `client_secret` field.\n    \n\nThen run the Mandate and the Payments flows.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "32498815"
+	},
+	"item": [
+		{
+			"name": "Mandate Flow",
+			"item": [
+				{
+					"name": "01 - Create client token",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									" ",
+									"pm.environment.set(\"accessToken\", res.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/oauth/token",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "02A - Create Mandate for new user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"",
+									"var statusCode = pm.response.code;",
+									"if (statusCode >= 400) {",
+									"    return;",
+									"}",
+									"",
+									"pm.environment.set(\"mandateId\", res.mandate.id);",
+									"pm.environment.set(\"userId\", res.mandate.visaUserId);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user\": {\n        \"firstName\": \"{{$randomFirstName}}\",\n        \"lastName\": \"{{$randomLastName}}\",\n        \"email\": \"{{$randomEmail}}\",\n        \"ssn\": \"100010001\",\n        \"dateOfBirth\": \"2000-01-01\",\n        \"address\": {\n            \"street\": \"{{$randomStreetAddress}}\",\n            \"postalCode\": \"10001\",\n            \"city\": \"{{$randomCity}}\",\n            \"state\": \"NY\",\n            \"country\": \"US\"\n        },\n        \"phone\": {\n            \"number\": \"1234567891\",\n            \"type\": \"MOBILE\"\n        }\n    },\n    \"merchantRegistrationDate\": \"2025-01-01\",\n    \"merchantReferenceId\": \"{{$randomUUID}}\",\n    \"redirectUri\": \"https://console.us.tink.com/callback\",\n    \"trackingId\": \"{{$guid}}\", // to see errors or declines, try: RISK_DECLINED, NEGATIVE_DECLINED or FAILED\n  \"metadata\": {\n    \"displayAmount\": {\n      \"currency\": \"USD\",\n      \"amount\": {{$randomInt}}\n    },\n    \"paymentDirection\": \"PAY_IN\",\n    \"finalActionType\": \"INSTANT\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{host}}/payments/mandates",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								"mandates"
+							]
+						},
+						"description": "Create a gACH mandate for a user. The `mandateId` is a required Tink Link parameter. The response will include a `redirectUri` which is a Tink Link url to start the product flow.\n\nView the visualizer to copy the Tink Link url."
+					},
+					"response": []
+				},
+				{
+					"name": "02B - Create Mandate for an existing user (Optional)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"",
+									"var statusCode = pm.response.code;",
+									"if (statusCode >= 400) {",
+									"    return;",
+									"}",
+									"",
+									"pm.environment.set(\"mandateId\", res.mandate.id);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"visaUserId\": \"{{userId}}\",\n    \"redirectUri\": \"https://console.us.tink.com/callback\",\n    \"merchantRegistrationDate\": \"2025-01-01\",\n    \"merchantReferenceId\": \"{{$randomUUID}}\",\n    \"trackingId\": \"{{$guid}}\",\n    \"metadata\": {\n        \"displayAmount\": {\n            \"amount\": {{$randomInt}},\n            \"currency\": \"USD\"\n        },\n        \"paymentDirection\": \"PAY_IN\",\n        \"finalActionType\": \"INSTANT\"\n    }\n}"
+						},
+						"url": {
+							"raw": "{{host}}/payments/mandates",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								"mandates"
+							]
+						},
+						"description": "This is an optional step in the product flow and can be ignored. \n\nYou can either 'Create Mandate on new user 2A' (or) 'Create Mandate on existing user 2B'.\n\nTo create a gACH mandate for an existing user, the `userId` is a required parameter. The response will include a `redirectUri` which is a Tink Link url to start the product flow.\n\nView the visualizer to copy the Tink Link url."
+					},
+					"response": []
+				},
+				{
+					"name": "03 - Get mandate",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/payments/mandates/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								"mandates",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{mandateId}}"
+								}
+							]
+						},
+						"description": "You can only access mandates that have been authorized."
+					},
+					"response": []
+				},
+				{
+					"name": "04 - Revoke mandate",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{host}}/payments/mandates/:id",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								"mandates",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "{{mandateId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "# US Guaranteed Payments - Mandate Flow\n\n[API Reference](https://docs.us.tink.com/resources/payments-us/api-reference)\n\n## Instructions\n\nDownload and Import the Postman Collection and Environment. Supply the necessary fields marked with `CHANGE_ME`\n\n## How to get the ClientId and ClientSecret:\n\nTo run API calls, update the environment with the matching `client_secret`.\n\n1. Log in to the Visa [Console](https://console.us.tink.com/)\n    \n2. Go to App settings\n    \n3. Copy the Client ID and place it in the postman environment `client_id` field.\n    \n4. In Console, Creat a new client secret, copy it and place it in the postman environment `client_secret` field.\n    \n\n## API Calls\n\nOnce you have all the credentials required, then run the flow:\n\n#### 01 - Create client token\n\nThe `accessToken` from the response will automatically be used in all following calls. It is valid for 30 minutes (1800 seconds). If 30 minutes pass before you have finished making your integration, run the request again to generate and use a new `accessToken` (that’s also valid for 30 minutes).\n\n#### 02A - Create mandate for new user\n\nIn the create mandate request body, feel free to modify the body to test how values appear in the Visa Link.\n\nThen, copy the `redirectUri` from the response and paste it into your browser.\n\n#### The User Flow\n\nTo test out the Demo Bank Experience, select DemoBank V2, and use one of the following usernames:\n\nuniversal_user\n\n#### 02B - Create mandate for an existing user\n\nThis is an optional step if you have already authorized the mandate with a new user - you can complete the mandate flow with either 'Create Mandate on new user 2A' (or) 'Create Mandate on existing user 2B'. You can use this flow in the case that you have already set up a Visa User, and want to create a new mandate or additional mandate for that user.\n\nTo create a gACH mandate for an existing user, the `userId` is a required parameter. This `visaUserId` will be fetched after successfully creating the user.\n\nThe response will include a `redirectUri` which is the Visa Link url. Paste this url in your browser.\n\nUse the appropriate Bank credentials and complete these pre-requisites steps before calling the next /GET mandate request in this flow:\n\n- Account Selection\n    \n- Clicking Continue / Pay Now\n    \n\n#### 03 - Get mandate\n\nThe mandate id to GET will be automatically used from the second call's response.\n\n#### 04 - Revoke mandate\n\nThe mandate id to be DELETED will be automatically used from the second call's response."
+		},
+		{
+			"name": "Payments Flow",
+			"item": [
+				{
+					"name": "01 - Create client token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"",
+									"pm.environment.set(\"accessToken\", res.access_token);",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								},
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/oauth/token",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						},
+						"description": "Create an `accessToken` that will be used to create a gACH payment. When `scope` is omitted, all scopes on the client will be applied to the token."
+					},
+					"response": []
+				},
+				{
+					"name": "02 - Initiate Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"var statusCode = pm.response.code;",
+									"",
+									"if (statusCode >= 400) {",
+									"    return;",
+									"}",
+									"",
+									"pm.environment.set(\"paymentId\", res.paymentId);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"mandateId\": \"{{mandateId}}\",\n    \"amount\": {{$randomInt}},\n    \"currency\": \"USD\",\n    \"description\": \"CHANGE_ME\", // to see errors or declines, try: RISK_DECLINED, NEGATIVE_DECLINED or FAILED\n    \"merchantReferenceId\": \"{{$randomUUID}}\",\n    \"type\": \"PAY_IN\",\n    \"riskTier\": \"{{riskTier}}\",\n    \"segmentId\": \"{{segmentId}}\",\n    \"trackingId\": \"{{$randomUUID}}\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/payments",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments"
+							]
+						},
+						"description": "Initiates a new payment\n\nNecessary fields:\n- mandateId \t    : Unique identifier of the mandate in the Tink system in UUID format\n- riskTier          : Code used for risk analysis of the transaction\n- segmentId\t        : Segment id used as a merchant identifier. Digital equivalent of a physical store\n- trackingId\t    : Tracking id used for device fingerprinting\n\n\nNote: riskTier, segmentId, and trackingId can be random value when using demo bank"
+					},
+					"response": []
+				},
+				{
+					"name": "03 - Cancel Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"segmentId\": \"{{segmentId}}\",\n    \"trackingId\": \"{{trackingId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/payments/:paymentId/cancel",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								":paymentId",
+								"cancel"
+							],
+							"variable": [
+								{
+									"key": "paymentId",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Cancels existing payment.\n\nNecessary parameters:\n- paymentId \t    : Unique identifier of the payment in the Tink system in UUID format\n\nNecessary fields:\n- segmentId\t        : Segment id used as a merchant identifier. Digital equivalent of a physical store\n- trackingId\t    : Tracking id used for device fingerprinting\n\n\nNote: segmentId, and trackingId can be random value when using demo bank"
+					},
+					"response": []
+				},
+				{
+					"name": "04 - Refund Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									"var statusCode = pm.response.code;",
+									"",
+									"if (statusCode >= 400) {",
+									"    return;",
+									"}",
+									"",
+									"pm.environment.set(\"refundId\", res.refundId);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"amount\": {{$randomInt}},\n    \"currency\": \"USD\",\n    \"merchantReferenceId\": \"{{$randomUUID}}\",\n    \"segmentId\": \"{{segmentId}}\",\n    \"trackingId\": \"{{trackingId}}\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/payments/:paymentId/refunds",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								":paymentId",
+								"refunds"
+							],
+							"variable": [
+								{
+									"key": "paymentId",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Refunds existing payment\n\nNecessary parameters:\n- paymentId \t    : Unique identifier of the payment in the Tink system in UUID format\n\nNecessary fields:\n- amount\t\t\t: Value in cents. The refund amount can be less than or equal to the current balance of the payment being refunded\n- segmentId\t        : Segment id used as a merchant identifier. Digital equivalent of a physical store\n- trackingId\t    : Tracking id used for device fingerprinting\n\n\nNote: segmentId, and trackingId can be random value when using demo bank"
+					},
+					"response": []
+				},
+				{
+					"name": "05 - Get Payment",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{host}}/payments/:paymentId",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								":paymentId"
+							],
+							"variable": [
+								{
+									"key": "paymentId",
+									"value": "{{paymentId}}"
+								}
+							]
+						},
+						"description": "Fetches existing payment\n\nNecessary parameters:\n- paymentId \t    : Unique identifier of the payment in the Tink system in UUID format"
+					},
+					"response": []
+				},
+				{
+					"name": "06 - Get Refund",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{host}}/payments/:paymentId/refunds/:refundId",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"payments",
+								":paymentId",
+								"refunds",
+								":refundId"
+							],
+							"variable": [
+								{
+									"key": "paymentId",
+									"value": "{{paymentId}}"
+								},
+								{
+									"key": "refundId",
+									"value": "{{refundId}}"
+								}
+							]
+						},
+						"description": "Fetches existing refund\n\nNecessary parameters:\n- paymentId \t    : Unique identifier of the payment in the Tink system in UUID format\n- paymentId \t    : Unique identifier of the refund in the Tink system in UUID format"
+					},
+					"response": []
+				}
+			],
+			"description": "# US Guaranteed Payments - Payments Flow\n\n[API Reference](https://docs.us.tink.com/resources/payments-us/api-reference)\n\n## Instructions\n\nDownload and Import the Postman Collection and Environment. Supply the necessary fields marked with `CHANGE_ME`\n\n## How to get the ClientId and ClientSecret:\n\nTo run API calls, update the environment with the matching `client_secret`.\n\n1. Log in to the Visa [Console](https://console.us.tink.com/)\n    \n2. Go to App settings\n    \n3. Copy the Client ID and place it in the postman environment `client_id` field.\n    \n4. In Console, Creat a new client secret, copy it and place it in the postman environment `client_secret` field.\n    \n\n#### 01 - Create client token\n\nThe `accessToken` from the response will automatically be used in all following calls. It is valid for 30 minutes (1800 seconds). If 30 minutes pass before you have finished making your integration, run the request again to generate and use a new `accessToken` (that’s also valid for 30 minutes).\n\n#### 02- Initiate a Payment\n\n## Necessary fields\n\n- clientId : App credentials used to authenticate your app and can be shared with anyone\n    \n- clientSecret : App credentials used to authenticate your app and can only be viewed once\n    \n- mandateId : Unique identifier of the mandate in the Tink system in UUID format\n    \n- riskTier : Code used for risk analysis of the transaction\n    \n- segmentId : Segment id used as a merchant identifier. Digital equivalent of a physical store\n    \n- trackingId : Tracking id used for device fingerprinting\n    \n\n### Pre-requisites steps to obtain necessary fields\n\n#### _client_id_ and _client_secret_\n\n- Login to Console App\n    \n- Go to App settings\n    \n- Copy Client ID for _client_id_\n    \n- Click `Create a new client secret` and save it for _client_secret_\n    \n\n#### _mandateId_\n\n- Download `Visa US - Guaranteed Payments - Mandate Flow` postman collection and proceed with its description\n    \n\n#### _riskTier_\n\n- Obtained during your customer onboarding process, ask for credentials and riskTiers after onboarding\n    \n\nNote: riskTier can be a random value when using demo bank\n\n#### _segmentId_\n\n- Obtained during your customer onboarding process, ask for credentials and segmentIds after onboarding\n    \n\nNote: segmentId can be a random value when using demo bank\n\n#### _trackingId_\n\n- Obtained by implementing ThreatMetrix\n    \n\nNote: trackingId can be a random value when using demo bank\n\n#### 03 - Cancel a Payment\n\nCancel a payment by utilizing the `paymentId.`\n\n#### 04 - Refund a Payment\n\nRefund or partially refund a payment by utilizing the `paymentId.`\n\nOnce a payment is refunded you can use the Get Payment Endpoint to see the status of the Payment ID.\n\n#### 05 - Get a Payment\n\nGet information about a payment using a `paymentId.`\n\n#### 06 - Get a Refund\n\nGet information about a payment that has been refunded using a `paymentId.`\n\n## Necessary Headers\n\n- Idempotency-Key : Generated key uses to recognize subsequent retries of the same request"
+		},
+		{
+			"name": "Webhooks",
+			"item": [
+				{
+					"name": "01 - Create client token",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var res = pm.response.json();",
+									" ",
+									"pm.environment.set(\"accessToken\", res.access_token);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "client_id",
+									"value": "{{client_id}}",
+									"type": "text"
+								},
+								{
+									"key": "client_secret",
+									"value": "{{client_secret}}",
+									"type": "text"
+								},
+								{
+									"key": "grant_type",
+									"value": "client_credentials",
+									"type": "text"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{host}}/api/v1/oauth/token",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"oauth",
+								"token"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "02 - Webhooks",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{accessToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Idempotency-Key",
+								"value": "{{$guid}}",
+								"type": "text"
+							},
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"description\": \"My Guaranteed Payments Webhooks\",\n  \"disabled\": false,\n  \"enabledEvents\": [\n    \"us:mandate:updated\",\n    \"us:instant-payment:updated\" // you can set these up together or separately\n  ],\n  \"url\": \"CHANGE_ME\"\n}"
+						},
+						"url": {
+							"raw": "{{host}}/events/v2/webhook-endpoints",
+							"host": [
+								"{{host}}"
+							],
+							"path": [
+								"events",
+								"v2",
+								"webhook-endpoints"
+							]
+						},
+						"description": "This is an optional step in the product flow and can be ignored.\n\nYou can either 'Create Mandate on new user 2A' (or) 'Create Mandate on existing user 2B'.\n\nTo create a gACH mandate for an existing user, the `visaUserId` is a required parameter. The response will include a `redirectUri` which is a Tink Link url to start the product flow.\n\nView the visualizer to copy the Tink Link url."
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	]
+}
