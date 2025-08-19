@@ -13,6 +13,6 @@ metadata:
   cmdb:
     id: 0078327
 spec:
-  owner: accounts
+  owner: payments-onepay
   type: other
   lifecycle: experimental
