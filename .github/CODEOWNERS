@@ -1,1 +1,2 @@
-* @tink-ab/accounts-maintainer
+# Multiple owners until oncall rotation is handed over from accounts
+* @tink-ab/payments-onepay-maintainer @tink-ab/accounts-maintainer
